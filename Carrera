@@ -1,0 +1,96 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+class Atleta {
+public:
+    string nombre;
+    int numero;
+    vector<double> tiempos;
+
+    Atleta(string nombre, int numero) {
+        this->nombre = nombre;
+        this->numero = numero;
+    }
+
+    void agregarTiempo(double tiempo) {
+        this->tiempos.push_back(tiempo);
+    }
+
+    double promedio() {
+        double sum = 0;
+        for (double tiempo : tiempos) {
+            sum += tiempo;
+        }
+        return sum / tiempos.size();
+    }
+
+    bool operator<(const Atleta& other) const {
+     
+    }
+};
+
+class Prueba {
+public:
+    vector<Atleta> atletas;
+    vector<double> ultimosTiempos;
+
+    void agregarAtleta(string nombre, int numero) {
+        atletas.emplace_back(nombre, numero);
+    }
+
+    void agregarTiempo(double tiempo) {
+        ultimosTiempos.push_back(tiempo);
+        for (Atleta& atleta : atletas) {
+            if (atleta.tiempos.size() < 2) {
+                atleta.agregarTiempo(tiempo);
+            }
+        }
+        if (ultimosTiempos.size() >= 2) {
+            double promedio = (ultimosTiempos[0] + ultimosTiempos[1]) / 2.0;
+            for (Atleta& atleta : atletas) {
+                if (atleta.tiempos.size() == 2) {
+                    atleta.agregarTiempo(promedio);
+                }
+            }
+            sort(atletas.begin(), atletas.end());
+            ultimosTiempos.clear();
+        }
+    }
+};
+
+int main() {
+    Prueba prueba;
+    string nombre;
+    int numero;
+    double tiempo;
+    while (true) {
+        cout << "Ingrese el nombre del atleta (o 'fin' para terminar): ";
+        cin >> nombre;
+        if (nombre == "fin") break;
+        cout << "Ingrese el numero asignado al atleta: ";
+        cin >> numero;
+        prueba.agregarAtleta(nombre, numero);
+    }
+    while (true) {
+        cout << "Ingrese el tiempo del atleta en esta ronda (o 0 para terminar): ";
+        cin >> tiempo;
+        if (tiempo == 0) break;
+        prueba.agregarTiempo(tiempo);
+    }
+    for (Atleta& atleta : prueba.atletas) {
+        cout << "Atleta " << atleta.nombre << " (numero " << atleta.numero << "): ";
+        if (atleta.tiempos.size() == 0) {
+            cout << "No hay tiempos registrados" << endl;
+        } else {
+            cout << "Promedio: " << atleta.promedio() << " - Ultimos tiempos: ";
+            for (double tiempo : atleta.tiempos) {
+                cout << tiempo << " ";
+            }
+            cout << endl;
+        }
+    }
+    return 0;
+}
