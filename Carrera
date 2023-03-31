@@ -1,96 +1,113 @@
 #include <iostream>
-#include <vector>
-#include <algorithm>
-
+#include <cstring>
 using namespace std;
 
-class Atleta {
-public:
+const int MAX_ATLETAS = 10;
+const int MAX_RONDAS = 2;
+
+struct Atleta {
     string nombre;
     int numero;
-    vector<double> tiempos;
-
-    Atleta(string nombre, int numero) {
-        this->nombre = nombre;
-        this->numero = numero;
-    }
-
-    void agregarTiempo(double tiempo) {
-        this->tiempos.push_back(tiempo);
-    }
-
-    double promedio() {
-        double sum = 0;
-        for (double tiempo : tiempos) {
-            sum += tiempo;
-        }
-        return sum / tiempos.size();
-    }
-
-    bool operator<(const Atleta& other) const {
-     
-    }
 };
 
-class Prueba {
-public:
-    vector<Atleta> atletas;
-    vector<double> ultimosTiempos;
-
-    void agregarAtleta(string nombre, int numero) {
-        atletas.emplace_back(nombre, numero);
-    }
-
-    void agregarTiempo(double tiempo) {
-        ultimosTiempos.push_back(tiempo);
-        for (Atleta& atleta : atletas) {
-            if (atleta.tiempos.size() < 2) {
-                atleta.agregarTiempo(tiempo);
-            }
-        }
-        if (ultimosTiempos.size() >= 2) {
-            double promedio = (ultimosTiempos[0] + ultimosTiempos[1]) / 2.0;
-            for (Atleta& atleta : atletas) {
-                if (atleta.tiempos.size() == 2) {
-                    atleta.agregarTiempo(promedio);
-                }
-            }
-            sort(atletas.begin(), atletas.end());
-            ultimosTiempos.clear();
-        }
-    }
+struct RegistroTiempo {
+    int tiempo;
+    RegistroTiempo* sig;
 };
+
+struct AtletaPromedio {
+    Atleta atleta;
+    float promedio;
+};
+
+struct Nodo {
+    AtletaPromedio dato;
+    Nodo* sig;
+};
+
+void agregarAtleta(Atleta atletas[], int& cantAtletas);
+void agregarTiempo(RegistroTiempo* &inicio, int tiempo);
+float calcularPromedio(RegistroTiempo* inicio);
+void agregarAtletaPromedio(Nodo* &lifo, Atleta atleta, float promedio);
+void ordenarLifo(Nodo* &lifo);
 
 int main() {
-    Prueba prueba;
-    string nombre;
-    int numero;
-    double tiempo;
-    while (true) {
-        cout << "Ingrese el nombre del atleta (o 'fin' para terminar): ";
-        cin >> nombre;
-        if (nombre == "fin") break;
-        cout << "Ingrese el numero asignado al atleta: ";
-        cin >> numero;
-        prueba.agregarAtleta(nombre, numero);
-    }
-    while (true) {
-        cout << "Ingrese el tiempo del atleta en esta ronda (o 0 para terminar): ";
-        cin >> tiempo;
-        if (tiempo == 0) break;
-        prueba.agregarTiempo(tiempo);
-    }
-    for (Atleta& atleta : prueba.atletas) {
-        cout << "Atleta " << atleta.nombre << " (numero " << atleta.numero << "): ";
-        if (atleta.tiempos.size() == 0) {
-            cout << "No hay tiempos registrados" << endl;
-        } else {
-            cout << "Promedio: " << atleta.promedio() << " - Ultimos tiempos: ";
-            for (double tiempo : atleta.tiempos) {
-                cout << tiempo << " ";
+    Atleta atletas[MAX_ATLETAS];
+    int cantAtletas = 0;
+
+    RegistroTiempo* inicioTiempo = NULL;
+    Nodo* lifo = NULL;
+
+    int opcion;
+    do {
+        cout << "\n--- MENU PRINCIPAL ---" << endl;
+        cout << "1. Agregar atleta" << endl;
+        cout << "2. Agregar tiempo de atleta" << endl;
+        cout << "3. Mostrar tiempos de atletas" << endl;
+        cout << "4. Mostrar atletas con promedios ordenados" << endl;
+        cout << "5. Salir" << endl;
+        cout << "Ingrese una opcion: ";
+        cin >> opcion;
+
+        switch(opcion) {
+            case 1:
+                agregarAtleta(atletas, cantAtletas);
+                break;
+            case 2:
+                if(cantAtletas == 0) {
+                    cout << "Debe agregar al menos un atleta antes de registrar tiempos." << endl;
+                }
+                else {
+                    int numAtleta;
+                    cout << "Ingrese el numero del atleta (1-" << cantAtletas << "): ";
+                    cin >> numAtleta;
+                    if(numAtleta < 1 || numAtleta > cantAtletas) {
+                        cout << "Numero de atleta invalido." << endl;
+                    }
+                    else {
+                        int tiempo;
+                        cout << "Ingrese el tiempo (segundos): ";
+                        cin >> tiempo;
+                        agregarTiempo(atletas[numAtleta - 1].tiempos, tiempo);
+                    }
+                }
+                break;
+            case 3:
+                if(cantAtletas == 0) {
+                    cout << "No hay atletas registrados." << endl;
+                }
+                else {
+                    cout << "\n--- TIEMPOS DE ATLETAS ---" << endl;
+                    for(int i = 0; i < cantAtletas; i++) {
+                        cout << atletas[i].nombre << " (numero " << atletas[i].numero << "):" << endl;
+                        RegistroTiempo* actual = atletas[i].tiempos;
+                        while(actual != NULL) {
+                            cout << "  " << actual->tiempo << " segundos" << endl;
+                            actual = actual->sig;
+                        }
+                    }
+                }
+                break;
+            case 4:
+                if(cantAtletas == 0) {
+                    cout << "No hay atletas registrados." << endl;
+                }
+                else {
+                    Nodo* actual = lifo;
+                    cout << "\n--- ATLETAS CON PROMEDIOS ORDENADOS ---" << endl
+                while(actual != NULL) {
+                    cout << actual->dato.atleta.nombre << " (numero " << actual->dato.atleta.numero << "): " << actual->dato.promedio << " segundos" << endl;
+                    actual = actual->sig;
+                }
             }
-            cout << endl;
-        }
+            break;
+        case 5:
+            cout << "Saliendo del programa..." << endl;
+            break;
+        default:
+            cout << "Opcion invalida. Intente de nuevo." << endl;
+            break;
     }
-    return 0;
-}
+} while(opcion != 5);
+
+return 0;
