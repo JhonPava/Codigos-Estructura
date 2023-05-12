@@ -1,121 +1,179 @@
 #include <iostream>
 #include <string>
-#include <malloc.h>
 using namespace std;
 
-struct NodoArbol {
+struct Atleta {
     string nombre;
     int numero;
-    int vueltas;
-    float tiempo;
-    float promedio;
-    NodoArbol *izquierdo;
-    NodoArbol *derecho;
 };
 
-void insertar(NodoArbol *&arbol, NodoArbol *nuevo_nodo) {
-    if (arbol == NULL) {
-        arbol = nuevo_nodo;
-    } else if (nuevo_nodo->promedio < arbol->promedio) {
-        insertar(arbol->izquierdo, nuevo_nodo);
-    } else {
-        insertar(arbol->derecho, nuevo_nodo);
+class Nodo {
+public:
+    Atleta atleta;
+    double promedio;
+    Nodo* izquierda;
+    Nodo* derecha;
+    int altura;
+
+    Nodo(Atleta atleta, double promedio) {
+        this->atleta = atleta;
+        this->promedio = promedio;
+        this->izquierda = nullptr;
+        this->derecha = nullptr;
+        this->altura = 1;
     }
-}
+};
 
-void agregarAtleta(NodoArbol *&arbol) {
+class ArbolAVL {
+private:
+    Nodo* raiz;
 
-
-     NodoArbol *nuevo_atleta = new NodoArbol();
-
-    cout << "Ingrese el nombre del atleta: "<<endl;
-    cin>> nuevo_atleta->nombre;
-    getline(cin, nuevo_atleta->nombre);
-
-    cout << "Ingrese el numero del atleta: "<<endl;
-    cin >> nuevo_atleta->numero;
-
-    int total_vueltas = 0;
-    float total_tiempo = 0.0;
-    int num_vueltas; 
-    float tiempo;
-
-    do {
-        cout << "Ingrese el numero de vueltas del atleta (0 para terminar): "<<endl;
-        cin >> num_vueltas;
-
-        if (num_vueltas <3) {
-            total_vueltas += num_vueltas;
-
-            cout << "Ingrese el tiempo del atleta :"<<endl;
-            cout<<"minutos:"<<endl;
-            cin>>tiempo;
-            cout<<"segundos: "<<endl;
-           
-            cin >> tiempo;
-            total_tiempo += tiempo;
+    int obtenerAltura(Nodo* nodo) {
+        if (nodo == nullptr) {
+            return 0;
         }
-    } while (num_vueltas <3);
-   if (num_vueltas==0);
-
-    if (total_vueltas >= 2) {
-        nuevo_atleta->vueltas = total_vueltas;
-        nuevo_atleta->tiempo = total_tiempo;
-        nuevo_atleta->promedio = total_tiempo / total_vueltas;
-        insertar(arbol, nuevo_atleta);
-    } else {
-        cout << "El atleta debe dar al menos dos vueltas para ser registrado.\n";
-    }
-    return;
-}
-
-void mostrarArbol(NodoArbol *arbol) {
-    if (arbol == NULL) {
-        return;
+        return nodo->altura;
     }
 
-    mostrarArbol(arbol->izquierdo);
-    cout << arbol->nombre << ", Numero: " << arbol->numero << ", Promedio: " << arbol->promedio << endl;
-    mostrarArbol(arbol->derecho);
-}
+    int obtenerBalance(Nodo* nodo) {
+        if (nodo == nullptr) {
+            return 0;
+        }
+        return obtenerAltura(nodo->izquierda) - obtenerAltura(nodo->derecha);
+    }
+
+    Nodo* rotacionDerecha(Nodo* nodo) {
+        Nodo* nodoIzquierda = nodo->izquierda;
+        Nodo* nodoDerecha = nodoIzquierda->derecha;
+
+        nodoIzquierda->derecha = nodo;
+        nodo->izquierda = nodoDerecha;
+
+        nodo->altura = max(obtenerAltura(nodo->izquierda), obtenerAltura(nodo->derecha)) + 1;
+        nodoIzquierda->altura = max(obtenerAltura(nodoIzquierda->izquierda), obtenerAltura(nodoIzquierda->derecha)) + 1;
+
+        return nodoIzquierda;
+    }
+
+    Nodo* rotacionIzquierda(Nodo* nodo) {
+        Nodo* nodoDerecha = nodo->derecha;
+        Nodo* nodoIzquierda = nodoDerecha->izquierda;
+
+        nodoDerecha->izquierda = nodo;
+        nodo->derecha = nodoIzquierda;
+
+        nodo->altura = max(obtenerAltura(nodo->izquierda), obtenerAltura(nodo->derecha)) + 1;
+        nodoDerecha->altura = max(obtenerAltura(nodoDerecha->izquierda), obtenerAltura(nodoDerecha->derecha)) + 1;
+
+        return nodoDerecha;
+    }
+
+    Nodo* insertarNodo(Nodo* nodo, Atleta atleta, double tiempo) {
+        if (nodo == nullptr) {
+            return new Nodo(atleta, tiempo);
+        }
+
+        if (tiempo < nodo->promedio) {
+            nodo->izquierda = insertarNodo(nodo->izquierda, atleta, tiempo);
+        } else if (tiempo > nodo->promedio) {
+            nodo->derecha = insertarNodo(nodo->derecha, atleta, tiempo);
+        } else {
+            // Ignorar duplicados (en este ejemplo)
+            return nodo;
+        }
+
+        nodo->altura = max(obtenerAltura(nodo->izquierda), obtenerAltura(nodo->derecha)) + 1;
+
+        int balance = obtenerBalance(nodo);
+
+        // Caso de rotación doble a la izquierda-derecha
+        if (balance > 1 && tiempo > nodo->izquierda->promedio) {
+            nodo->izquierda = rotacionIzquierda(nodo->izquierda);
+            return rotacionDerecha(nodo);
+        }
+
+        // Caso de rotación doble a la derecha-izquierda
+        if (balance < -1 && tiempo < nodo->derecha->promedio) {
+            nodo->derecha = rotacionDerecha(nodo->derecha);
+            return rotacionIzquierda(nodo);
+        }
+
+        return nodo;
+    }
+
+    // ...
+
+    void mostrarMenorAMayor(Nodo* nodo) {
+        if (nodo != nullptr) {
+            mostrarMenorAMayor(nodo->izquierda);
+            cout << "Nombre: " << nodo->atleta.nombre << ", Número: " << nodo->atleta.numero << ", Promedio: "  << nodo->promedio << endl;
+            mostrarMenorAMayor(nodo->derecha);
+        }
+    }
+
+public:
+    ArbolAVL() {
+        raiz = nullptr;
+    }
+
+    void insertar(Atleta atleta, double tiempo) {
+        raiz = insertarNodo(raiz, atleta, tiempo);
+    }
+
+    void mostrarDatosMenorAMayor() {
+        mostrarMenorAMayor(raiz);
+    }
+};
 
 int main() {
-    NodoArbol *arbol = NULL;
+    ArbolAVL arbol;
 
-    int opcion = 0;
-
+    int opcion;
     do {
-        cout << "\nMenu de opciones:\n";
-        cout << "1. Agregar atleta.\n";
-        cout << "2. Mostrar atletas registrados.\n";
-        cout << "3. Salir.\n";
-
-        cout << "Ingrese una opcion: ";
+        cout << "**** MENÚ ****" << endl;
+        cout << "1. Registrar datos de un atleta" << endl;
+        cout << "2. Mostrar datos de menor a mayor promedio" << endl;
+        cout << "3. Salir" << endl;
+        cout << "Ingrese la opción deseada: ";
         cin >> opcion;
 
         switch (opcion) {
-            case 1:
-                agregarAtleta(arbol);
-                break;
+            case 1: {
+                string nombre;
+                int numero;
+                double tiempo;
 
-            case 2:
-                cout << "\nAtletas registrados:\n";
-                mostrarArbol(arbol);
-                break;
+                cout << "Ingrese el nombre del atleta: ";
+                cin >> nombre;
+                cout << "Ingrese el número del atleta: ";
+                cin >> numero;
+                cout << "Ingrese el tiempo del atleta: ";
+                cin >> tiempo;
 
+                Atleta atleta;
+                atleta.nombre = nombre;
+                atleta.numero = numero;
+
+                arbol.insertar(atleta, tiempo);
+                cout << "Datos del atleta registrados correctamente." << endl;
+                break;
+            }
+            case 2: {
+                cout << "Datos de los atletas de menor a mayor promedio: " << endl;
+                arbol.mostrarDatosMenorAMayor();
+                break;
+            }
             case 3:
-                cout << "Saliendo...\n";
+                cout << "Saliendo del programa..." << endl;
                 break;
-
             default:
-                cout << "Opcion invalida.\n";
+                cout << "Opción inválida. Por favor, intente nuevamente." << endl;
                 break;
         }
+
+        cout << endl;
+
     } while (opcion != 3);
 
-
-return 0;
-
-
-
+    return 0;
 }
