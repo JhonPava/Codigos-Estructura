@@ -130,7 +130,7 @@ int main() {
 
     int opcion;
     do {
-        cout << "**** MENÚ ****" << endl;
+        cout << "** MENÚ **" << endl;
         cout << "1. Registrar datos de un atleta" << endl;
         cout << "2. Mostrar datos de menor a mayor promedio" << endl;
         cout << "3. Salir" << endl;
